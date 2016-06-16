@@ -1,0 +1,120 @@
+
+*{
+	font-size: 13px;
+	font-family: arial;
+	color: #8D99AE;
+}
+
+.df-group{
+	padding: 40px;
+	margin: 10px;
+	-webkit-border-radius: 20px;
+	-moz-border-radius: 20px;
+	border-radius: 20px;
+	display: table;
+	width: 450px;
+	margin: auto;
+	background-color: #F2F7F9;
+	margin: 5px;
+	float: left;
+	position: relative;
+	padding-top: 70px;
+	border: solid 1px;
+}
+
+.df-group .groupname{
+	font-size: 18px;
+	margin-bottom: 10px;
+	position: absolute;
+	padding: 20px;
+	top: 0px;
+	left: 0px;
+
+	-webkit-border-top-left-radius: 20px;
+	-webkit-border-top-right-radius: 20px;
+	-moz-border-radius-topleft: 20px;
+	-moz-border-radius-topright: 20px;
+	border-top-left-radius: 20px;
+	border-top-right-radius: 20px;
+
+	background-color: #8D99AE;
+	color: #fff;
+	width: 492px;
+}
+
+.df-group .df-input{
+	padding: 10px;
+	float: left;
+	display: none;
+}
+
+.df-group .df-input:last-child{
+	clear: both;
+}
+
+.df-group  input,
+.df-group  select,
+.df-group  textarea{
+	padding: 10px;
+	-webkit-border-radius: 20px;
+	-moz-border-radius: 20px;
+	border-radius: 20px;
+
+	border: solid 2px #8D99AE;
+	display: block;
+	clear: both;
+}
+
+.df-group .df-input *:focus{
+	outline: none;
+}
+
+.df-group .df-input *:focus::-webkit-input-placeholder {
+color: transparent;
+}
+
+.df-group .df-input textarea{
+	width: 400px;
+	height: 100px;
+}
+
+.df-group .df-input label{
+	color: #8D99AE;
+	display: block;
+	margin-bottom: 10px; 
+	clear: both;
+}
+
+.df-group .df-input .df-error{
+	border-color: #FFA69E;
+}
+
+.df-footer{
+	/*clear: both;*/
+	padding-top: 20px;
+}
+
+.df-footer input{
+	border: none;
+	color: white;
+	float: left;
+}
+
+.df-footer input[type=submit]{
+	background-color: #00A8E8;
+}
+
+.df-footer input.reset{
+	background-color: #EF233C;
+}
+
+.df-group.df-footer .df-input{
+	padding: 10px;
+}
+
+.df-group.df-footer .df-input input{
+	padding: 15px;
+	text-transform: uppercase;
+	cursor: pointer;
+}
+
