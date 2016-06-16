@@ -1,0 +1,9 @@
+[{	"groupname":"Exemplo Checkbox",
+	"data":[{	"type":"checkbox","label":"Social Media","name":"social-media","required":"yes",
+				"options":[ { "label":"Facebook", "value" : "1" },
+							{ "label":"Google", "value" : "2" , "checked":"checked" },
+							{ "label":"Instagram", "value" : "3" } ]},
+			{	"type":"radio","label":"Choose one","name":"social-media","required":"yes",
+				"options":[ { "label":"Facebook", "value" : "1" },
+							{ "label":"Google", "value" : "2" },
+							{ "label":"Instagram", "value" : "3" } ]} ]}]

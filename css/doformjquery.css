@@ -110,3 +110,29 @@ color: transparent;
 	cursor: pointer;
 }
 
+
+.ui-dialog{
+	z-index: 2000 !important;
+}
+
+.df-group ul{
+	margin: 0px;
+	padding: 0px;
+	list-style: none;
+}
+
+.df-group .multi-checkbox{
+	width: 100%;
+}
+
+.df-group .multi-checkbox ul li{
+	float: left;
+	width: 25%;
+}
+
+.df-group .multi-checkbox ul li input,
+.df-group .multi-radio ul li input{
+	display: inline;
+}
+
+

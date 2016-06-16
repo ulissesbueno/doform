@@ -1,1 +1,9 @@
-[{"groupname":"Escolha um Formulário","data":[{"type":"select","label":"Formulário Json","name":"formjson","size":"","maxsize":"100","value":"","required":"yes","options":[{"text":"","value":"","selecttd":"selected"},{"text":"User","value":"user.json"},{"text":"Server","value":"server.json"}]}]}]
+[{	"groupname":"Escolha um Formulário",
+	"data":[{	"type":"select","label":"Formulário Json","name":"formjson","size":"","maxsize":"100","value":"","required":"yes",
+				"options":[	{"text":"","value":"","selecttd":"selected"},
+							{"text":"User","value":"user.json"},
+							{"text":"Server","value":"server.json"},
+							{"text":"Checkbox / Radio","value":"checkbox.json"}
+						  ]
+			}]
+	}]

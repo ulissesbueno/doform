@@ -11,6 +11,17 @@
 			classerror : 'df-error',
 			classinput : 'df-input',
 			classgroup : 'df-group',
+			mode : 'new',
+			textButton : { 	'new' 	: {	'submit' : 'Send',
+										'cancel' : 'Cancel'	
+										},
+							'edit' 	: { 'submit' : 'Alter',
+										'cancel' : 'Cancel'	
+										},
+							'view'	: { 'submit' : 'Edit',
+										'cancel' : 'Close'	
+										}
+									 },
 			submit: function(options) {
 
 			},
@@ -97,13 +108,14 @@
 		var showmessage = function( message ){
 
 			form.find('#df-dialog').remove();
-			form.append("<div id='df-dialog'>"+message+"</div>");
+			form.append("<div id='df-dialog' style='display:none'>"+message+"</div>");
 
 			$( "#df-dialog" ).dialog({
 			      modal: true,
 			      buttons: {
 			        Ok: function() {
 			          $( this ).dialog( "close" );
+			          $('.ui-dialog').remove();
 			        }
 			      }
 		    });
@@ -111,7 +123,11 @@
 
 		// Block Form
 		var block = function(){
+
 			if( !blocking ){
+
+				unblock();
+
 				form.block ({ 	message: 'Processing...',
 								css: { 
 						            border: 'none', 
@@ -120,7 +136,7 @@
 						            '-webkit-border-radius': '10px', 
 						            '-moz-border-radius': '10px', 
 						            opacity: .5, 
-						            color: '#000' 
+						            color: '#000'
 						        }
 						    });
 				blocking = true;
@@ -195,7 +211,7 @@
 		var doConfirm = function( conf ){
 
 			form.find('#df-dialog').remove();
-			form.append("<div id='df-dialog'>"+conf+"</div>");
+			form.append("<div id='df-dialog' style='display:none'>"+conf+"</div>");
 			
 			$("#df-dialog" ).dialog({
 		      resizable: true,
@@ -204,13 +220,20 @@
 		        "Confirmar": function() {
 		        	send();
 		          	$( this ).dialog( "close" );
+		          	$('.ui-dialog').remove();
 		        },
 		        "Cancelar": function() {
 		        	unblock();
 		          	$( this ).dialog( "close" );
+		          	$('.ui-dialog').remove();
 		        }
 		      }
 		    });			
+		}
+
+		var doReset = function(){
+
+			form.find('')
 
 		}
 
@@ -247,6 +270,8 @@
 									var type = " type='text' ";
 									var required = '';
 									var opts = '';
+									var extra_class = '';
+
 									// por tipo 
 									switch( ret[i].data[f].type ){
 										// select
@@ -268,6 +293,45 @@
 											}
 
 											break;
+
+										case 'checkbox':
+											extra_class = "multi-checkbox";
+											size = '';
+											selector = 'div';
+											var options = [];
+											if( ret[i].data[f].options ){
+
+												for( var p in ret[i].data[f].options ){
+													options.push( "<li><input type='checkbox' value='"+ret[i].data[f].options[p].value+"' name='"+ret[i].data[f].options[p].name+"' /><span>"+ret[i].data[f].options[p].label+"</span></li>" );
+												}
+
+												if( options.length ){
+													opts = options.join('');
+													close = "><ul>"+opts+"</ul></div>";
+												}
+											}
+
+											break;	
+
+										case 'radio':
+											extra_class = "multi-radio";
+											size = '';
+											selector = 'div';
+											var options = [];
+											if( ret[i].data[f].options ){
+
+												for( var p in ret[i].data[f].options ){
+													options.push( "<li><input type='radio' value='"+ret[i].data[f].options[p].value+"' name='"+ret[i].data[f].options[p].name+"' /><span>"+ret[i].data[f].options[p].label+"</span></li>" );
+												}
+
+												if( options.length ){
+													opts = options.join('');
+													close = "><ul>"+opts+"</ul></div>";
+												}
+											}
+
+											break;	
+
 										// textarea
 										case 'textarea':
 											size = '';
@@ -277,6 +341,8 @@
 										case 'password':
 											type = " type='password' ";
 											break;
+										case 'hidden':
+											type = " type='hidden' ";
 									}
 
 									if( ret[i].data[f].required == 'yes' ){
@@ -285,7 +351,7 @@
 
 									//hmtl input
 									var html_input = '';
-										html_input += "<div class='"+config.classinput+" "+ret[i].data[f].name+" '>";
+										html_input += "<div class='"+config.classinput+" "+ret[i].data[f].name+" "+extra_class+" '>";
 										html_input += "<label for='"+ret[i].data[f].name+"'>"+ret[i].data[f].label+"</label>";	
 										html_input += "<"+selector+" name='"+ ret[i].data[f].name +"' id='"+ ret[i].data[f].name +"' "+type+" value='"+ ret[i].data[f].value +"' "+ required +" placeholder='"+ ret[i].data[f].label +"' data-type='"+ ret[i].data[f].type +"' size='"+ret[i].data[f].size+"' "+close+" ";
 										html_input += "</div>";
@@ -321,11 +387,17 @@
 
 							});
 
+							form.prepend("<input type='hidden' name='dfmode' value='"+config.mode+"' />");
+
 							if( config.footer ){
 								// Adicionar Submit
-	           					form.append("<div class='df-group df-footer'><div class='"+config.classinput+"' ><input type='submit' value='Enviar'/></div><div class='clear'> </div><div class='"+config.classinput+"' ><input type='button' class='reset' value='Cancelar' /></div><div class='clear'> </div></div>");
-							}
-							
+	           					form.append("<div class='df-group df-footer'><div class='"+config.classinput+"' ><input type='submit' value='Enviar' id='df-submit' /></div><div class='clear'> </div><div class='"+config.classinput+"' ><input type='button' id='df-reset' class='reset' value='Cancelar' /></div><div class='clear'> </div></div>");
+	           					form.find('#df-reset').unbind('click').click(function(){
+	           						doReset();
+	           					})
+							}							
+
+
 	           				var t = 100;
 							var time = 0;
 							form.find( "."+config.classinput ).each(function(){
