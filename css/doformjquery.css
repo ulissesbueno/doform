@@ -1,8 +1,12 @@
 
 *{
-	font-size: 13px;
+	font-size: 12px;
 	font-family: arial;
 	color: #8D99AE;
+}
+
+form{
+	clear: both;
 }
 
 .df-group{
@@ -15,31 +19,12 @@
 	width: 450px;
 	margin: auto;
 	background-color: #F2F7F9;
-	margin: 5px;
-	float: left;
-	position: relative;
-	padding-top: 70px;
+	margin-bottom: 5px;
 	border: solid 1px;
 }
 
 .df-group .groupname{
 	font-size: 18px;
-	margin-bottom: 10px;
-	position: absolute;
-	padding: 20px;
-	top: 0px;
-	left: 0px;
-
-	-webkit-border-top-left-radius: 20px;
-	-webkit-border-top-right-radius: 20px;
-	-moz-border-radius-topleft: 20px;
-	-moz-border-radius-topright: 20px;
-	border-top-left-radius: 20px;
-	border-top-right-radius: 20px;
-
-	background-color: #8D99AE;
-	color: #fff;
-	width: 492px;
 }
 
 .df-group .df-input{
@@ -56,13 +41,20 @@
 .df-group  select,
 .df-group  textarea{
 	padding: 10px;
-	-webkit-border-radius: 20px;
-	-moz-border-radius: 20px;
-	border-radius: 20px;
-
 	border: solid 2px #8D99AE;
 	display: block;
 	clear: both;
+}
+
+.df-group  input,
+.df-group  textarea{
+	-webkit-border-radius: 20px;
+	-moz-border-radius: 20px;
+	border-radius: 20px;
+}
+
+.df-group  select{
+	min-width: 200px;
 }
 
 .df-group .df-input *:focus{

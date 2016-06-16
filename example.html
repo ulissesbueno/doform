@@ -12,13 +12,51 @@
 <script src='js/doformjquery.js'></script>
 
 
+<form id='FormsJson'>
+	
+</form>
+
 
 <form id='DoForm'>
 	
 </form>
 
 <script>
-	$('#DoForm').doform({ 	data: 'form/user.json',
-							action : 'send.php',
-							confirmation : 'confirmation.php' });
+
+	var SPMaskBehavior = function (val) {
+	  return val.replace(/\D/g, '').length === 11 ? '(00) 00000-0000' : '(00) 0000-00009';
+	},
+	spOptions = {
+	  onKeyPress: function(val, e, field, options) {
+	      field.mask(SPMaskBehavior.apply({}, arguments), options);
+	    }
+	};
+
+	
+	$('#FormsJson').doform({ data: 'form/forms.json',
+							 footer : false,
+							 loaded : function(){
+
+							 	$('#formjson').unbind('change');
+							 	$('#formjson').change(function(){
+							 		if( $(this).val() ){
+
+							 			$('#DoForm').doform({ 	data: 'form/'+$(this).val(),
+																action : 'send.php',
+																confirmation : 'confirmation.php',
+																loaded : function(){
+
+																	$('#phone').unmask().mask(SPMaskBehavior, spOptions);
+																	
+
+																} });
+
+							 		}
+							 		
+							 	});
+
+							 } 
+						  	});
+
+	
 </script>

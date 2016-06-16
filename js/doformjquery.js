@@ -28,10 +28,11 @@
        			});
 
        			return ok;
-
        		},
        		confirmation : '',
        		ajax : true,
+       		footer : true,
+       		loaded : function(form){ },
        		type_validate : { 
        							email : function( input ){
        								var regex = /^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z0-9]{2,4})+$/;
@@ -62,13 +63,25 @@
 								    if ((cpf.charAt(9) != a[9]) || (cpf.charAt(10) != a[10]) || cpf.match(expReg)) retorno = false;
 
 								    return retorno;
+       							},
+       							ftp : function( input ){
+
+       								value = input.val().trim();
+       								if( value && value.indexOf('ftp://') == -1 ){
+       									value = 'ftp://'+value;
+       								}
+       								input.val(value);
+
+       								return true;
        							}
        						},
        		type_mask : {
        			cpf : '000.000.000-00',
-       			date : '00/00/0000'
+       			date : '00/00/0000',
+       			port : '0000'
        		}
 		};
+		
 
 		// variaveis do objeto
 		var input_error = ''; // carrega o valor do input que estiver com erro
@@ -153,27 +166,29 @@
 		// função valida input individualmente
 		var validateInput = function( type, input ){
 
-			//se for required
-			if( input.attr('required') == 'required'){
-				if( config.type_validate[type] ){
-					var func = config.type_validate[type];
-					var ok = func( input );
-				}else{
+
+			if( config.type_validate[type] ){
+				var func = config.type_validate[type];
+				var ok = func( input );
+			}else{
+				//se for required
+				if( input.attr('required') == 'required'){
 					var ok = (input.val());
 				}
-
-				if(!ok){
-					input.addClass( config.classerror ).val('');
-				}
-
-				// no focus tira a classe de erro
-				input.unbind('focus');
-				input.focus(function(){
-					$(this).removeClass( config.classerror );
-				});
-
-				return ok;
 			}
+
+			if(!ok){
+				input.addClass( config.classerror ).val('');
+			}
+
+			// no focus tira a classe de erro
+			input.unbind('focus');
+			input.focus(function(){
+				$(this).removeClass( config.classerror );
+			});
+
+			return ok;
+			
 		}
 
 		// Confirmação
@@ -209,7 +224,7 @@
 				//bloqueia form
 				block();
 				$.ajax({
-					url : config.data,
+					url : config.data + '?' + Math.random() ,
 					dataType : 'JSON',
 					success : function( ret ){
 						
@@ -231,13 +246,27 @@
 									var size = ret[i].data[f].size;
 									var type = " type='text' ";
 									var required = '';
+									var opts = '';
 									// por tipo 
 									switch( ret[i].data[f].type ){
 										// select
 										case 'select':
 											size = '';
 											selector = 'select';
-											close = "</select>";
+											var options = [];
+
+											if( ret[i].data[f].options ){
+
+												for( var p in ret[i].data[f].options ){
+													options.push( "<option value='"+ret[i].data[f].options[p].value+"'>"+ret[i].data[f].options[p].text+"</option>" );
+												}
+
+												if( options.length ){
+													opts = options.join('');
+													close = ">"+opts+"</select>";													
+												}
+											}
+
 											break;
 										// textarea
 										case 'textarea':
@@ -258,7 +287,7 @@
 									var html_input = '';
 										html_input += "<div class='"+config.classinput+" "+ret[i].data[f].name+" '>";
 										html_input += "<label for='"+ret[i].data[f].name+"'>"+ret[i].data[f].label+"</label>";	
-										html_input += "<"+selector+" name='"+ ret[i].data[f].name +"' "+type+" value='"+ ret[i].data[f].value +"' "+ required +" placeholder='"+ ret[i].data[f].label +"' data-type='"+ ret[i].data[f].type +"' size='"+ret[i].data[f].size+"' "+close+" ";
+										html_input += "<"+selector+" name='"+ ret[i].data[f].name +"' id='"+ ret[i].data[f].name +"' "+type+" value='"+ ret[i].data[f].value +"' "+ required +" placeholder='"+ ret[i].data[f].label +"' data-type='"+ ret[i].data[f].type +"' size='"+ret[i].data[f].size+"' "+close+" ";
 										html_input += "</div>";
 
 									// append input
@@ -279,13 +308,24 @@
 								var type = input.attr('data-type');
 								if( config.type_mask[type] ){
 									input.unmask();
-									input.mask( config.type_mask[type] );
+
+									if( typeof type == 'string' ){
+										input.mask( config.type_mask[type] );	
+									}
+
+									if( typeof type == 'object' ){
+										//input.mask( config.type_mask[type].mask, config.type_mask[type].options );
+									}
+									
 								}
 
-							})
+							});
 
-							// Adicionar Submit
-	           				form.append("<div class='df-group df-footer'><div class='"+config.classinput+"' ><input type='submit' value='Enviar'/></div><div class='clear'> </div><div class='"+config.classinput+"' ><input type='button' class='reset' value='Cancelar' /></div><div class='clear'> </div></div>");
+							if( config.footer ){
+								// Adicionar Submit
+	           					form.append("<div class='df-group df-footer'><div class='"+config.classinput+"' ><input type='submit' value='Enviar'/></div><div class='clear'> </div><div class='"+config.classinput+"' ><input type='button' class='reset' value='Cancelar' /></div><div class='clear'> </div></div>");
+							}
+							
 	           				var t = 100;
 							var time = 0;
 							form.find( "."+config.classinput ).each(function(){
@@ -293,6 +333,7 @@
 								time += t;
 							})
 
+							config.loaded();
 
 						}	
 
