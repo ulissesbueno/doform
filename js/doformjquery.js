@@ -262,6 +262,7 @@
 								group.append("<div class='groupname'>"+ ret[i].groupname +"</div>");
 								// adiciona campos
 								for( var f in ret[i].data ){
+
 									// Seletor input, select e textarea
 									var selector = 'input';
 									// fechamento tag
@@ -343,6 +344,11 @@
 											break;
 										case 'hidden':
 											type = " type='hidden' ";
+										
+										default:
+
+											//
+
 									}
 
 									if( ret[i].data[f].required == 'yes' ){
@@ -391,7 +397,7 @@
 
 							if( config.footer ){
 								// Adicionar Submit
-	           					form.append("<div class='df-group df-footer'><div class='"+config.classinput+"' ><input type='submit' value='Enviar' id='df-submit' /></div><div class='clear'> </div><div class='"+config.classinput+"' ><input type='button' id='df-reset' class='reset' value='Cancelar' /></div><div class='clear'> </div></div>");
+	           					form.append("<div class='df-group df-footer'><div class='"+config.classinput+"' ><input type='submit' value='Enviar' id='df-submit' class='df-submit' /></div><div class='clear'> </div><div class='"+config.classinput+"' ><input type='button' id='df-reset' class='reset df-reset' value='Cancelar' /></div><div class='clear'> </div></div>");
 	           					form.find('#df-reset').unbind('click').click(function(){
 	           						doReset();
 	           					})
@@ -431,6 +437,7 @@
             
 			form = $( this );
 			writeinput( form );
+			form.attr('mode',config.mode);
             
            	// se tiver um action
            	if( config.action ){

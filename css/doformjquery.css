@@ -135,4 +135,8 @@ color: transparent;
 	display: inline;
 }
 
+form[mode=view] .df-input input:not(.df-submit):not(.df-reset){
+	pointer-events: none;
+}
+
 
