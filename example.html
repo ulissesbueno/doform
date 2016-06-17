@@ -41,16 +41,54 @@
 							 	$('#formjson').change(function(){
 							 		if( $(this).val() ){
 
-							 			$('#DoForm').doform({ 	data: 'form/'+$(this).val(),
-																action : 'send.php',
-																confirmation : 'confirmation.php',
-																mode : 'view',
-																loaded : function(){
+							 			switch( $(this).val() ){
 
-																	$('#phone').unmask().mask(SPMaskBehavior, spOptions);
-																	
+							 				case 'user.json':
 
-																} });
+							 					$('#DoForm').doform({ 	data: 'form/'+$(this).val(),
+																	action : 'send.php',
+																	confirmation : 'confirmation.php',
+																	mode : 'new',
+																	loaded : function(){
+
+																		$('#phone').unmask().mask(SPMaskBehavior, spOptions);
+																		
+
+																	} });
+
+							 					break;
+
+							 				case 'user-edit.json':
+
+							 					$('#DoForm').doform({ 	data: 'form/'+$(this).val(),
+																	action : 'send.php',
+																	confirmation : 'confirmation.php',
+																	mode : 'view',
+																	loaded : function(){
+
+																		$('#phone').unmask().mask(SPMaskBehavior, spOptions);
+																		
+
+																	} });
+
+							 					break;
+
+							 				default :
+
+							 					$('#DoForm').doform({ 	data: 'form/'+$(this).val(),
+																		action : 'send.php',
+																		confirmation : 'confirmation.php',
+																		mode : 'edit',
+																		loaded : function(){						
+																			
+
+																		} 
+																	});
+
+
+							 			}
+
+							 			
 
 							 		}else{
 							 			$('#DoForm').html('');

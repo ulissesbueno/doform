@@ -16,10 +16,12 @@
 										'cancel' : 'Cancel'	
 										},
 							'edit' 	: { 'submit' : 'Alter',
-										'cancel' : 'Cancel'	
+										'cancel' : 'Cancel',
+										'new'	 : 'New'		
 										},
 							'view'	: { 'submit' : 'Edit',
-										'cancel' : 'Close'	
+										'cancel' : 'Close',
+										'new'	 : 'New'		
 										}
 									 },
 			submit: function(options) {
@@ -98,6 +100,7 @@
 		var input_error = ''; // carrega o valor do input que estiver com erro
 		var message = '' // Mensagem de erro ou sucesso 
 		var blocking = false;
+		var databackup = {};
 		
 		// Mostra erro e destaca o campo 
 		var showerror = function( input ){
@@ -152,6 +155,7 @@
 
 		// Envia os dados do formulario
 		var send = function(){
+
 			block();
 			$.ajax({
 				url : config.action,
@@ -233,8 +237,24 @@
 
 		var doReset = function(){
 
-			form.find('')
+			form.find('');
 
+		}
+
+		var changeMode = function( m ){
+			
+			config.mode = m;
+			form.attr('mode', config.mode );
+
+			if( m == 'new'){
+				form.find( "input[fixed=''],textarea[fixed=''],select[fixed='']" ).each( function(){
+					$(this).val('');
+				})
+			}
+			
+			form.find('.df-submit').val( config.textButton[config.mode].submit );
+			form.find('.df-reset').val( config.textButton[config.mode].cancel );
+			form.find('.df-new').val( config.textButton[config.mode].new );
 		}
 
 		// Escreve inputs
@@ -272,6 +292,8 @@
 									var required = '';
 									var opts = '';
 									var extra_class = '';
+									var fixed = '';
+									if( ret[i].data[f].fixed ) fixed = ret[i].data[f].fixed;
 
 									// por tipo 
 									switch( ret[i].data[f].type ){
@@ -355,15 +377,23 @@
 										required = "required='required'";
 									}
 
+									if( config.mode == 'new' ){
+										if( !ret[i].data[f].fixed ){
+											ret[i].data[f].value = '';	
+										}										
+									}
+
+									databackup[ ret[i].data[f].name ] = ret[i].data[f].value;
+
 									//hmtl input
 									var html_input = '';
 										html_input += "<div class='"+config.classinput+" "+ret[i].data[f].name+" "+extra_class+" '>";
 										html_input += "<label for='"+ret[i].data[f].name+"'>"+ret[i].data[f].label+"</label>";	
-										html_input += "<"+selector+" name='"+ ret[i].data[f].name +"' id='"+ ret[i].data[f].name +"' "+type+" value='"+ ret[i].data[f].value +"' "+ required +" placeholder='"+ ret[i].data[f].label +"' data-type='"+ ret[i].data[f].type +"' size='"+ret[i].data[f].size+"' "+close+" ";
+										html_input += "<"+selector+" name='"+ ret[i].data[f].name +"' id='"+ ret[i].data[f].name +"' "+type+" value='"+ ret[i].data[f].value +"' "+ required +" placeholder='"+ ret[i].data[f].label +"' data-type='"+ ret[i].data[f].type +"' size='"+ret[i].data[f].size+"' fixed='"+fixed+"' "+close+" ";
 										html_input += "</div>";
 
 									// append input
-									group.append( html_input+'<div class="clear"> </div>' );
+									group.append( html_input+'<div class="clear"></div>' );
 									// onblur no ultimo input inserido
 									group.find(selector+':last-child').unbind('blur');
 									group.find(selector+':last-child').blur(function(){
@@ -396,11 +426,40 @@
 							form.prepend("<input type='hidden' name='dfmode' value='"+config.mode+"' />");
 
 							if( config.footer ){
+
+								var buttons = [];
+									buttons.push("<div class='"+config.classinput+"' ><input type='button' value='"+ config.textButton[config.mode].submit +"' id='df-submit' class='df-submit' /></div><div class='clear'> </div>" );
+									buttons.push("<div class='"+config.classinput+"' ><input type='button' id='df-reset' class='reset df-reset' value='"+ config.textButton[config.mode].cancel +"' /></div><div class='clear'> </div>" );
+									buttons.push("<div class='"+config.classinput+"' ><input type='button' id='df-new' class='new df-new' value='"+ config.textButton[config.mode].new +"' /></div><div class='clear'> </div>" );
+
 								// Adicionar Submit
-	           					form.append("<div class='df-group df-footer'><div class='"+config.classinput+"' ><input type='submit' value='Enviar' id='df-submit' class='df-submit' /></div><div class='clear'> </div><div class='"+config.classinput+"' ><input type='button' id='df-reset' class='reset df-reset' value='Cancelar' /></div><div class='clear'> </div></div>");
+	           					form.append("<div class='df-group df-footer'> "+ buttons.join('') +" </div>");
 	           					form.find('#df-reset').unbind('click').click(function(){
 	           						doReset();
+	           						changeMode( 'view' );
+	           					});
+
+	           					form.find('#df-submit').unbind('click').click(function(){
+	           						switch( config.mode ){
+	           							case 'edit':
+	           							case 'alter':
+	           							case 'new':
+
+	           								form.submit();
+
+	           								break;
+	           							case 'view' :
+
+	           								changeMode( 'edit' );
+
+	           								break;
+	           						}
+	           					});
+
+	           					form.find('#df-new').unbind('click').click(function(){
+	           						changeMode( 'new' );
 	           					})
+
 							}							
 
 

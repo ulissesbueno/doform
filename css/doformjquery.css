@@ -92,13 +92,19 @@ color: transparent;
 	float: left;
 }
 
-.df-footer input[type=submit]{
+.df-footer input[type=button]{
 	background-color: #00A8E8;
 }
+
 
 .df-footer input.reset{
 	background-color: #EF233C;
 }
+
+.df-footer input.new{
+	background-color: #70C1B3;
+}
+
 
 .df-group.df-footer .df-input{
 	padding: 10px;
@@ -135,8 +141,19 @@ color: transparent;
 	display: inline;
 }
 
-form[mode=view] .df-input input:not(.df-submit):not(.df-reset){
+form[mode=view] .df-group .df-input input:not(.df-submit):not(.df-reset):not(.df-new){
 	pointer-events: none;
+	border: none;
+}
+
+form[mode=view] .df-footer input.df-reset{
+	display: none;
+}
+
+form[mode=new] .df-footer input.df-new,
+form[mode=new] .df-footer input.df-reset
+{
+	display: none;
 }
 
 
