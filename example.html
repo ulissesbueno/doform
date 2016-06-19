@@ -54,6 +54,11 @@
 																		$('#phone').unmask().mask(SPMaskBehavior, spOptions);
 																		
 
+																	},
+																	buttonCancel :  function( form ){
+																		$('#FormsJson').find( 'option').removeAttr('selected');
+																		$('#FormsJson').find( 'option:eq(0)' ).attr('selected','selected');
+																		$('#formjson').change();
 																	} });
 
 							 					break;
@@ -61,15 +66,22 @@
 							 				case 'user-edit.json':
 
 							 					$('#DoForm').doform({ 	data: 'form/'+$(this).val(),
-																	action : 'send.php',
-																	confirmation : 'confirmation.php',
-																	mode : 'view',
-																	loaded : function(){
+																		action : 'send.php',
+																		confirmation : 'confirmation.php',
+																		mode : 'view',
+																		loaded : function(){
 
-																		$('#phone').unmask().mask(SPMaskBehavior, spOptions);
-																		
+																			$('#phone').unmask().mask(SPMaskBehavior, spOptions);
+																			
 
-																	} });
+																		},
+																		realtime : true ,
+																		buttonCancel :  function( form ){
+																			$('#FormsJson').find( 'option').removeAttr('selected');
+																			$('#FormsJson').find( 'option:eq(0)' ).attr('selected','selected');
+																			$('#formjson').change();
+																		}
+																	});
 
 							 					break;
 

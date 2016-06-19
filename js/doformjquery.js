@@ -13,17 +13,19 @@
 			classgroup : 'df-group',
 			mode : 'new',
 			textButton : { 	'new' 	: {	'submit' : 'Send',
-										'cancel' : 'Cancel'	
+										'reset'  : 'Cancel'	
 										},
 							'edit' 	: { 'submit' : 'Alter',
-										'cancel' : 'Cancel',
+										'reset'  : 'Cancel',
 										'new'	 : 'New'		
 										},
-							'view'	: { 'submit' : 'Edit',
-										'cancel' : 'Close',
+							'view'	: { 'edit' 	 : 'Edit',
 										'new'	 : 'New'		
 										}
 									 },
+			buttonCancel : function( form ){
+
+			},
 			submit: function(options) {
 
 			},
@@ -31,12 +33,15 @@
 
        			var ok = true;
 
-       			form.find('input[required=yes],select[required=yes]').each(function(){
+       			form.find('input[required=required],select[required=required]').each(function(){
 
-       				var datatype = $(this).attr('data-type');
-       				if( !validateInput(datatype, $(this)) ){
-       					ok = false;
-       				}       				
+       				if( ok ){
+       					var datatype = $(this).attr('data-type');
+	       				if( !validateInput(datatype, $(this)) ){
+	       					ok = false;
+	       				}  
+       				}
+       				     				
 
        			});
 
@@ -92,7 +97,8 @@
        			cpf : '000.000.000-00',
        			date : '00/00/0000',
        			port : '0000'
-       		}
+       		},
+       		realtime : false
 		};
 		
 
@@ -102,9 +108,93 @@
 		var blocking = false;
 		var databackup = {};
 		
-		// Mostra erro e destaca o campo 
-		var showerror = function( input ){
+		var realtime = function(){
+			
+			var changed = false;
+			form.find("input:not(.df-btn):not(.df),select,textarea").each(function(){
 
+				var input = $(this);
+				var name = input.attr('name');
+				var value = input.val();
+
+				if( databackup[name] != value ){
+					changed = true;
+				}
+
+			});
+
+			if( changed ) {
+				form.find('.df-submit').css('pointer-events','auto').css( {'opacity':1} );
+				form.addClass('changed');
+			}else{
+				form.find('.df-submit').css('pointer-events','none').css( {'opacity':0.5} );
+				form.removeClass('changed');
+			}
+
+		}
+
+		//add buttons
+		var addButtons = function(){
+
+			form.find('.df-group.df-footer').html('');
+			var buttons = [];
+			var buts = config.textButton[ config.mode ];
+
+			for( b in buts ){
+				
+				form.find('.df-group.df-footer').append("<div class='"+config.classinput+" df-"+b+"' ><input type='button' id='df-"+b+"' class='df-btn df-"+b+"' value='"+ buts[b] +"'  /></div><div class='clear'> </div>" );
+
+			}
+
+			form.find('.df-input').show();
+			
+			form.find('#df-reset').unbind('click').click(function(){
+				config.buttonCancel( form );
+				doReset();
+				changeMode( 'view' );
+			});
+
+			form.find('#df-submit').unbind('click').click(function(){
+				form.submit();
+			});
+
+			form.find('#df-edit').unbind('click').click(function(){
+				changeMode( 'edit' );
+			});
+
+			form.find('#df-new').unbind('click').click(function(){
+				changeMode( 'new' );
+			})
+
+		}
+
+		// Mostra erro e destaca o campo 
+		var showerror = function( error_type, type, input ){
+			
+			input.addClass( config.classerror ).val('');
+			
+			var parent = input.parent();
+			form.find('.df-alert-error').remove();
+			var message = '';
+			parent.css('position','relative');
+			switch( error_type ){
+				// Campo vazio
+				case 1:
+
+					message = "Este campo &eacute; obrigat&oacute;rio";
+
+					break;
+
+				case 2:
+
+					message = "Preencha corretamente este campo";
+
+					break;
+
+			}
+
+			input.after("<div class='df-alert-error' style='position: absolute'>"+message+"</div>");
+			
 		}
 
 		// Exibe mensagem
@@ -186,10 +276,12 @@
 		// função valida input individualmente
 		var validateInput = function( type, input ){
 
+			var error_type = 1;
 
 			if( config.type_validate[type] ){
 				var func = config.type_validate[type];
 				var ok = func( input );
+				error_type = 2;
 			}else{
 				//se for required
 				if( input.attr('required') == 'required'){
@@ -198,14 +290,17 @@
 			}
 
 			if(!ok){
-				input.addClass( config.classerror ).val('');
+				showerror( error_type , type , input );
 			}
 
 			// no focus tira a classe de erro
 			input.unbind('focus');
 			input.focus(function(){
 				$(this).removeClass( config.classerror );
+				$(this).parent().find('.df-alert-error').remove();
 			});
+
+
 
 			return ok;
 			
@@ -244,6 +339,7 @@
 		var changeMode = function( m ){
 			
 			config.mode = m;
+			form.find('#df-mode').val( config.mode );
 			form.attr('mode', config.mode );
 
 			if( m == 'new'){
@@ -252,9 +348,7 @@
 				})
 			}
 			
-			form.find('.df-submit').val( config.textButton[config.mode].submit );
-			form.find('.df-reset').val( config.textButton[config.mode].cancel );
-			form.find('.df-new').val( config.textButton[config.mode].new );
+			addButtons();
 		}
 
 		// Escreve inputs
@@ -283,6 +377,7 @@
 								// adiciona campos
 								for( var f in ret[i].data ){
 
+									var req = '';
 									// Seletor input, select e textarea
 									var selector = 'input';
 									// fechamento tag
@@ -373,8 +468,10 @@
 
 									}
 
+
 									if( ret[i].data[f].required == 'yes' ){
 										required = "required='required'";
+										req = '*';
 									}
 
 									if( config.mode == 'new' ){
@@ -388,7 +485,7 @@
 									//hmtl input
 									var html_input = '';
 										html_input += "<div class='"+config.classinput+" "+ret[i].data[f].name+" "+extra_class+" '>";
-										html_input += "<label for='"+ret[i].data[f].name+"'>"+ret[i].data[f].label+"</label>";	
+										html_input += "<label for='"+ret[i].data[f].name+"'>"+ret[i].data[f].label+" "+req+"</label>";	
 										html_input += "<"+selector+" name='"+ ret[i].data[f].name +"' id='"+ ret[i].data[f].name +"' "+type+" value='"+ ret[i].data[f].value +"' "+ required +" placeholder='"+ ret[i].data[f].label +"' data-type='"+ ret[i].data[f].type +"' size='"+ret[i].data[f].size+"' fixed='"+fixed+"' "+close+" ";
 										html_input += "</div>";
 
@@ -423,43 +520,11 @@
 
 							});
 
-							form.prepend("<input type='hidden' name='dfmode' value='"+config.mode+"' />");
-
+							form.prepend("<input type='hidden' id='df-mode' name='df-mode' value='"+config.mode+"' fixed='true' class='df' />");
+			
 							if( config.footer ){
-
-								var buttons = [];
-									buttons.push("<div class='"+config.classinput+"' ><input type='button' value='"+ config.textButton[config.mode].submit +"' id='df-submit' class='df-submit' /></div><div class='clear'> </div>" );
-									buttons.push("<div class='"+config.classinput+"' ><input type='button' id='df-reset' class='reset df-reset' value='"+ config.textButton[config.mode].cancel +"' /></div><div class='clear'> </div>" );
-									buttons.push("<div class='"+config.classinput+"' ><input type='button' id='df-new' class='new df-new' value='"+ config.textButton[config.mode].new +"' /></div><div class='clear'> </div>" );
-
-								// Adicionar Submit
-	           					form.append("<div class='df-group df-footer'> "+ buttons.join('') +" </div>");
-	           					form.find('#df-reset').unbind('click').click(function(){
-	           						doReset();
-	           						changeMode( 'view' );
-	           					});
-
-	           					form.find('#df-submit').unbind('click').click(function(){
-	           						switch( config.mode ){
-	           							case 'edit':
-	           							case 'alter':
-	           							case 'new':
-
-	           								form.submit();
-
-	           								break;
-	           							case 'view' :
-
-	           								changeMode( 'edit' );
-
-	           								break;
-	           						}
-	           					});
-
-	           					form.find('#df-new').unbind('click').click(function(){
-	           						changeMode( 'new' );
-	           					})
-
+								form.append("<div class='df-group df-footer'> </div>");
+								addButtons();
 							}							
 
 
@@ -497,6 +562,9 @@
 			form = $( this );
 			writeinput( form );
 			form.attr('mode',config.mode);
+
+			// se realtime estiver ativo
+			if( config.realtime )  setInterval(function(){ realtime() }, 2000);
             
            	// se tiver um action
            	if( config.action ){
@@ -563,7 +631,7 @@
            	})
 
         });
- 
+ 	
         return this;
 		
 	}

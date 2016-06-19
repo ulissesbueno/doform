@@ -92,18 +92,23 @@ color: transparent;
 	float: left;
 }
 
-.df-footer input[type=button]{
+.df-footer input.df-submit{
 	background-color: #00A8E8;
 }
 
 
-.df-footer input.reset{
+.df-footer input.df-reset{
 	background-color: #EF233C;
 }
 
-.df-footer input.new{
-	background-color: #70C1B3;
+.df-footer input.df-new{
+	background-color: #9BC53D;
 }
+
+.df-footer input.df-edit{
+	background-color: #525174;
+}
+
 
 
 .df-group.df-footer .df-input{
@@ -141,19 +146,18 @@ color: transparent;
 	display: inline;
 }
 
-form[mode=view] .df-group .df-input input:not(.df-submit):not(.df-reset):not(.df-new){
+form[mode=view] .df-input input:not(.df-btn){
 	pointer-events: none;
 	border: none;
 }
 
-form[mode=view] .df-footer input.df-reset{
-	display: none;
+.df-alert-error {
+	padding: 4px 0px 0px 4px;
+	color: red;
 }
 
-form[mode=new] .df-footer input.df-new,
-form[mode=new] .df-footer input.df-reset
-{
-	display: none;
-}
+
+
+
 
 
