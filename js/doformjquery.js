@@ -36,8 +36,9 @@
        			form.find('input[required=required],select[required=required]').each(function(){
 
        				if( ok ){
+
        					var datatype = $(this).attr('data-type');
-	       				if( !validateInput(datatype, $(this)) ){
+	       				if( !validateInput(datatype, $(this), true) ){
 	       					ok = false;
 	       				}  
        				}
@@ -91,6 +92,26 @@
        								input.val(value);
 
        								return true;
+       							},
+       							date: function( input ){
+
+       								var data = input.val();
+								    var dia = data.substring(0,2)
+								    var mes = data.substring(3,5)
+								    var ano = data.substring(6,10)
+								 
+								    //Criando um objeto Date usando os valores ano, mes e dia.
+								    var novaData = new Date(ano,(mes-1),dia);
+								 
+								    var mesmoDia = parseInt(dia,10) == parseInt(novaData.getDate());
+								    var mesmoMes = parseInt(mes,10) == parseInt(novaData.getMonth())+1;
+								    var mesmoAno = parseInt(ano) == parseInt(novaData.getFullYear());
+								 
+								    if (!((mesmoDia) && (mesmoMes) && (mesmoAno)))
+								    {
+								       	return false;
+								    }  
+								    return true;
        							}
        						},
        		type_mask : {
@@ -169,31 +190,44 @@
 		}
 
 		// Mostra erro e destaca o campo 
-		var showerror = function( error_type, type, input ){
-			
+		var showerror = function( error_type, type, input, fromForm ){
+
 			input.addClass( config.classerror ).val('');
 			
-			var parent = input.parent();
-			form.find('.df-alert-error').remove();
-			var message = '';
-			parent.css('position','relative');
-			switch( error_type ){
-				// Campo vazio
-				case 1:
+			if( !input.attr('error_status') == error_type ){
 
-					message = "Este campo &eacute; obrigat&oacute;rio";
+				input.attr('error_status',error_type);
+				
+				var parent = input.parent();
+				parent.find('.df-alert-error').remove();
+				var message = '';
+				parent.css('position','relative');
+				switch( error_type ){
+					// Campo vazio
+					case 1:
 
-					break;
+						message = "Este campo &eacute; obrigat&oacute;rio";
 
-				case 2:
+						break;
 
-					message = "Preencha corretamente este campo";
+					case 2:
 
-					break;
+						message = "Preencha corretamente este campo";
 
+						break;
+
+				};
+
+				input.after("<div class='df-alert-error' >"+message+"</div>");
+				parent.find('.df-alert-error').delay(2000).fadeOut( 2000, function(){
+					parent.find('.df-alert-error').remove();
+					input.removeAttr('error_status');
+				})
 			}
 
-			input.after("<div class='df-alert-error' style='position: absolute'>"+message+"</div>");
+			if( fromForm ){
+				input.focus();
+			}
 			
 		}
 
@@ -274,33 +308,35 @@
 		}
 
 		// função valida input individualmente
-		var validateInput = function( type, input ){
+		var validateInput = function( type, input, fromForm ){
 
 			var error_type = 1;
+			var ok = true;
 
-			if( config.type_validate[type] ){
-				var func = config.type_validate[type];
-				var ok = func( input );
-				error_type = 2;
-			}else{
-				//se for required
-				if( input.attr('required') == 'required'){
-					var ok = (input.val());
-				}
+			//se for required
+			if( input.attr('required') == 'required'){
+				ok = (input.val());
 			}
 
+			if( ok ){
+				if( config.type_validate[type] ){
+					var func = config.type_validate[type];
+					ok = func( input );
+					error_type = 2;
+
+				}
+			}
+			
 			if(!ok){
-				showerror( error_type , type , input );
+				showerror( error_type , type , input, fromForm );
 			}
 
 			// no focus tira a classe de erro
 			input.unbind('focus');
 			input.focus(function(){
 				$(this).removeClass( config.classerror );
-				$(this).parent().find('.df-alert-error').remove();
+				//$(this).parent().find('.df-alert-error').remove();
 			});
-
-
 
 			return ok;
 			
