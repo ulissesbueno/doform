@@ -12,17 +12,8 @@
 			classinput : 'df-input',
 			classgroup : 'df-group',
 			mode : 'new',
-			textButton : { 	'new' 	: {	'submit' : 'Send',
-										'reset'  : 'Cancel'	
-										},
-							'edit' 	: { 'submit' : 'Alter',
-										'reset'  : 'Cancel',
-										'new'	 : 'New'		
-										},
-							'view'	: { 'edit' 	 : 'Edit',
-										'new'	 : 'New'		
-										}
-									 },
+			textButtonSubmit : 	'Send',
+			buttons : {},
 			buttonCancel : function( form ){
 
 			},
@@ -33,11 +24,11 @@
 
        			var ok = true;
 
-       			form.find('input[required=required],select[required=required]').each(function(){
+       			form.find('input[required=required],select[required=required],textarea[required=required]').each(function(){
 
        				if( ok ){
 
-       					var datatype = $(this).attr('data-type');
+       					var datatype = $(this).data('type');
 	       				if( !validateInput(datatype, $(this), true) ){
 	       					ok = false;
 	       				}  
@@ -52,6 +43,7 @@
        		ajax : true,
        		footer : true,
        		loaded : function(form){ },
+       		after_submit: function(ret){}, 
        		type_validate : { 
        							email : function( input ){
        								var regex = /^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z0-9]{2,4})+$/;
@@ -112,6 +104,18 @@
 								       	return false;
 								    }  
 								    return true;
+       							},
+       							money:function( input ){
+
+       								var val = input.val();
+       								val = val.replace(/\./g,'');
+       								val = val.replace(/\,/,'.');
+       								val = Number(val);
+
+       								if( !val ) return false;
+       								return true;
+
+
        							}
        						},
        		type_mask : {
@@ -119,7 +123,8 @@
        			date : '00/00/0000',
        			port : '0000'
        		},
-       		realtime : false
+       		realtime : false,
+       		alert_error : ''
 		};
 		
 
@@ -155,7 +160,7 @@
 		}
 
 		//add buttons
-		var addButtons = function(){
+		var addButtons_old = function(){
 
 			form.find('.df-group.df-footer').html('');
 			var buttons = [];
@@ -186,7 +191,30 @@
 			form.find('#df-new').unbind('click').click(function(){
 				changeMode( 'new' );
 			})
+		}
 
+		var addButtons = function(){
+
+			form.find('.df-group.df-footer').html('');
+			$.extend( config.buttons, { 'submit' : {    name : config.textButtonSubmit ,
+                                                		click : function(){
+                                                    		form.submit();
+                                                		}
+                                            		} 
+                                       });
+			var buts = config.buttons;
+			for( b in buts ){
+				
+				form.find('.df-group.df-footer').append("<div class='"+config.classinput+" df-"+b+"' ><input type='button' id='df-"+b+"' class='df-btn df-"+b+"' value='"+ buts[b].name +"'  /></div><div class='clear'> </div>" );
+				//alert( ".df-group.df-footer ."+config.classinput+".df-"+b+" " )
+				form.find(".df-group.df-footer ."+config.classinput+".df-"+b+" ").click(buts[b].click);
+				if( buts[b].css ){
+					form.find(".df-group.df-footer ."+config.classinput+".df-"+b+" ").css(buts[b].css);	
+				} 
+
+			}
+
+			form.find('.df-input').show();
 		}
 
 		// Mostra erro e destaca o campo 
@@ -249,13 +277,13 @@
 		}
 
 		// Block Form
-		var block = function(){
+		var blockform = function( message ){
 
 			if( !blocking ){
 
 				unblock();
 
-				form.block ({ 	message: 'Processing...',
+				form.block ({ 	message: '',
 								css: { 
 						            border: 'none', 
 						            padding: '15px', 
@@ -280,7 +308,7 @@
 		// Envia os dados do formulario
 		var send = function(){
 
-			block();
+			blockform();
 			$.ajax({
 				url : config.action,
 				data : form.serialize() ,
@@ -289,14 +317,25 @@
 				success : function( ret ){
 					// tratamento de retorno
 					if( ret ){
+
 						// Success!
 						if( ret.success ){
 							
 						}
 
 						if( ret.message ){
-							showmessage( ret.message );
+							if(config.alert_error){
+								config.alert_error( ret.message, ret.success );
+							}else{
+								showmessage( ret.message );
+							}
+							
 						}
+
+						if( config.after_submit ){
+							config.after_submit( ret );
+						}
+						
 						
 					}	
 				},
@@ -387,288 +426,332 @@
 			addButtons();
 		}
 
+		var ReadJson = function( ret, form ){
+			//limpa form
+			form.html('');
+			// varre dados
+			for( var i in ret ){
+
+				var groupclass = '';
+				if( ret[i].groupclass ) groupclass = ret[i].groupclass;
+
+				// adiciona group
+				form.append( "<div class='"+config.classgroup+" "+groupclass+" ' ></div>" );
+				var group = form.find("."+config.classgroup+":last-child");
+				group.append("<div class='groupname'>"+ ret[i].groupname +"</div>");
+				// adiciona campos
+				for( var f in ret[i].data ){
+
+					var req = '';
+					// Seletor input, select e textarea
+					var selector = 'input';
+					// fechamento tag
+					var close = '>';
+					var size = ret[i].data[f].size;
+					var type = " type='text' ";
+					var required = '';
+					var opts = '';
+					var extra_class = '';
+					var fixed = '';
+					if( ret[i].data[f].fixed ) fixed = ret[i].data[f].fixed;
+					var input_class = '';
+					if( ret[i].data[f].class ) input_class = ret[i].data[f].class;
+					var disabled = '';
+					if( ret[i].data[f].disabled == 'yes') disabled = 'disabled="disabled"';
+					var readonly = '';
+					if( ret[i].data[f].readonly == 'yes' ) readonly = 'readonly="readonly"';
+					var label = '';
+					if( ret[i].data[f].label ) label = ret[i].data[f].label;
+
+					var no_div = false;
+
+					// por tipo 
+					switch( ret[i].data[f].type ){
+						// select
+						case 'select':
+							size = '';
+							selector = 'select';
+							var options = [];
+
+							if( ret[i].data[f].options ){
+
+								for( var p in ret[i].data[f].options ){
+									options.push( "<option value='"+ret[i].data[f].options[p].value+"'>"+ret[i].data[f].options[p].text+"</option>" );
+								}
+
+								if( options.length ){
+									opts = options.join('');
+									close = ">"+opts+"</select>";													
+								}
+							}
+
+							break;
+
+						case 'checkbox':
+							extra_class = "multi-checkbox";
+							size = '';
+							selector = 'div';
+							var options = [];
+							if( ret[i].data[f].options ){
+
+								for( var p in ret[i].data[f].options ){
+									options.push( "<li><input type='checkbox' value='"+ret[i].data[f].options[p].value+"' name='"+ret[i].data[f].options[p].name+"' /><span>"+ret[i].data[f].options[p].label+"</span></li>" );
+								}
+
+								if( options.length ){
+									opts = options.join('');
+									close = "><ul>"+opts+"</ul></div>";
+								}
+							}
+
+							break;	
+
+						case 'radio':
+							extra_class = "multi-radio";
+							size = '';
+							selector = 'div';
+							var options = [];
+							if( ret[i].data[f].options ){
+
+								for( var p in ret[i].data[f].options ){
+									options.push( "<li><input type='radio' value='"+ret[i].data[f].options[p].value+"' name='"+ret[i].data[f].options[p].name+"' /><span>"+ret[i].data[f].options[p].label+"</span></li>" );
+								}
+
+								if( options.length ){
+									opts = options.join('');
+									close = "><ul>"+opts+"</ul></div>";
+								}
+							}
+
+							break;	
+
+						// textarea
+						case 'textarea':
+							size = '';
+							selector = 'textarea';
+							close = "></textarea>";
+							break;
+						case 'password':
+							type = " type='password' ";
+							break;
+						case 'hidden':
+							type = " type='hidden' ";
+							no_div = true;
+							break;
+						case 'free':
+							type = " ";
+							selector = "div";
+						default:
+
+							//
+
+					}
+
+					if( ret[i].data[f].required == 'yes' ){
+						required = "required='required'";
+						req = '*';
+					}
+
+					if( config.mode == 'new' ){
+						if( !ret[i].data[f].fixed ){
+							ret[i].data[f].value = '';	
+						}										
+					}
+
+					databackup[ ret[i].data[f].name ] = ret[i].data[f].value;
+
+					//hmtl input
+					var html_input = '';
+
+					if( !no_div  ){
+						html_input += "<div class='"+config.classinput+" "+ret[i].data[f].name+" "+extra_class+" '>";
+						if(label) html_input += "<label for='"+ret[i].data[f].name+"'>"+ret[i].data[f].label+" "+req+"</label>";	
+					}
+						html_input += "<"+selector+" "+type+" class='"+input_class+"' name='"+ ret[i].data[f].name +"' id='"+ ret[i].data[f].name +"' value='"+ ret[i].data[f].value +"' "+ required +" placeholder='"+ ret[i].data[f].label +"' data-type='"+ ret[i].data[f].type +"' size='"+ret[i].data[f].size+"' fixed='"+fixed+"' "+disabled+" "+readonly+" "+close+" ";
+					if( !no_div  ){	
+						html_input += "</div>";
+					}
+
+					// append input
+					group.append( html_input+'<div class="clear"></div>' );
+					// onblur no ultimo input inserido
+					group.find(selector+':last-child').unbind('blur');
+					group.find(selector+':last-child').blur(function(){
+						// Valida input onblur
+						validateInput( $(this).attr('data-type'), $(this) );
+					});
+				}
+			}			
+		}
+
 		// Escreve inputs
 		var writeinput = function( form ){
 			if( config.data ){
 
-				//limpa form
-				form.html('');
+				if( typeof config.data === "object"){
+					ReadJson(config.data,form)
+				}else{
+					//bloqueia form
+					blockform();
+					$.ajax({
+						url : config.data + '?' + Math.random() ,
+						dataType : 'JSON',
+						success : function( ret ){
+							
+							// tratamento de retorno
+							if( ret ){
 
-				//bloqueia form
-				block();
-				$.ajax({
-					url : config.data + '?' + Math.random() ,
-					dataType : 'JSON',
-					success : function( ret ){
-						
-						// tratamento de retorno
-						if( ret ){
+								ReadJson(ret,form);							
 
-							// varre dados
-							for( var i in ret ){
-								// adiciona group
-								form.append( "<div class='"+config.classgroup+"' ></div>" );
-								var group = form.find("."+config.classgroup+":last-child");
-								group.append("<div class='groupname'>"+ ret[i].groupname +"</div>");
-								// adiciona campos
-								for( var f in ret[i].data ){
+							}	
 
-									var req = '';
-									// Seletor input, select e textarea
-									var selector = 'input';
-									// fechamento tag
-									var close = '>';
-									var size = ret[i].data[f].size;
-									var type = " type='text' ";
-									var required = '';
-									var opts = '';
-									var extra_class = '';
-									var fixed = '';
-									if( ret[i].data[f].fixed ) fixed = ret[i].data[f].fixed;
+						},
+						complete : function(){
+							// debloqueia form
+							unblock();
+						}
+					});	
+				}
 
-									// por tipo 
-									switch( ret[i].data[f].type ){
-										// select
-										case 'select':
-											size = '';
-											selector = 'select';
-											var options = [];
-
-											if( ret[i].data[f].options ){
-
-												for( var p in ret[i].data[f].options ){
-													options.push( "<option value='"+ret[i].data[f].options[p].value+"'>"+ret[i].data[f].options[p].text+"</option>" );
-												}
-
-												if( options.length ){
-													opts = options.join('');
-													close = ">"+opts+"</select>";													
-												}
-											}
-
-											break;
-
-										case 'checkbox':
-											extra_class = "multi-checkbox";
-											size = '';
-											selector = 'div';
-											var options = [];
-											if( ret[i].data[f].options ){
-
-												for( var p in ret[i].data[f].options ){
-													options.push( "<li><input type='checkbox' value='"+ret[i].data[f].options[p].value+"' name='"+ret[i].data[f].options[p].name+"' /><span>"+ret[i].data[f].options[p].label+"</span></li>" );
-												}
-
-												if( options.length ){
-													opts = options.join('');
-													close = "><ul>"+opts+"</ul></div>";
-												}
-											}
-
-											break;	
-
-										case 'radio':
-											extra_class = "multi-radio";
-											size = '';
-											selector = 'div';
-											var options = [];
-											if( ret[i].data[f].options ){
-
-												for( var p in ret[i].data[f].options ){
-													options.push( "<li><input type='radio' value='"+ret[i].data[f].options[p].value+"' name='"+ret[i].data[f].options[p].name+"' /><span>"+ret[i].data[f].options[p].label+"</span></li>" );
-												}
-
-												if( options.length ){
-													opts = options.join('');
-													close = "><ul>"+opts+"</ul></div>";
-												}
-											}
-
-											break;	
-
-										// textarea
-										case 'textarea':
-											size = '';
-											selector = 'textarea';
-											close = "></textarea>";
-											break;
-										case 'password':
-											type = " type='password' ";
-											break;
-										case 'hidden':
-											type = " type='hidden' ";
-										
-										default:
-
-											//
-
-									}
-
-
-									if( ret[i].data[f].required == 'yes' ){
-										required = "required='required'";
-										req = '*';
-									}
-
-									if( config.mode == 'new' ){
-										if( !ret[i].data[f].fixed ){
-											ret[i].data[f].value = '';	
-										}										
-									}
-
-									databackup[ ret[i].data[f].name ] = ret[i].data[f].value;
-
-									//hmtl input
-									var html_input = '';
-										html_input += "<div class='"+config.classinput+" "+ret[i].data[f].name+" "+extra_class+" '>";
-										html_input += "<label for='"+ret[i].data[f].name+"'>"+ret[i].data[f].label+" "+req+"</label>";	
-										html_input += "<"+selector+" name='"+ ret[i].data[f].name +"' id='"+ ret[i].data[f].name +"' "+type+" value='"+ ret[i].data[f].value +"' "+ required +" placeholder='"+ ret[i].data[f].label +"' data-type='"+ ret[i].data[f].type +"' size='"+ret[i].data[f].size+"' fixed='"+fixed+"' "+close+" ";
-										html_input += "</div>";
-
-									// append input
-									group.append( html_input+'<div class="clear"></div>' );
-									// onblur no ultimo input inserido
-									group.find(selector+':last-child').unbind('blur');
-									group.find(selector+':last-child').blur(function(){
-										// Valida input onblur
-										validateInput( $(this).attr('data-type'), $(this) );
-									});
-								}
-							}
-
-							// Set mask
-							form.find('input,select,textarea').each(function(){
-
-								var input = $(this);
-								var type = input.attr('data-type');
-								if( config.type_mask[type] ){
-									input.unmask();
-
-									if( typeof type == 'string' ){
-										input.mask( config.type_mask[type] );	
-									}
-
-									if( typeof type == 'object' ){
-										//input.mask( config.type_mask[type].mask, config.type_mask[type].options );
-									}
-									
-								}
-
-							});
-
-							form.prepend("<input type='hidden' id='df-mode' name='df-mode' value='"+config.mode+"' fixed='true' class='df' />");
-			
-							if( config.footer ){
-								form.append("<div class='df-group df-footer'> </div>");
-								addButtons();
-							}							
-
-
-	           				var t = 100;
-							var time = 0;
-							form.find( "."+config.classinput ).each(function(){
-								$(this).delay(time).fadeIn( 1000 );	
-								time += t;
-							})
-
-							config.loaded();
-
-						}	
-
-					},
-					complete : function(){
-						// debloqueia form
-						unblock();
-					}
-				});
-
-			}else{
-				alert('Não contem .json para fazer o formulario');
 			}
+
+			
+			//group.append( "<div style='clear: both'> </div>" );
+
+			// Set mask
+			form.find('input,select,textarea').each(function(){
+
+				var input = $(this);
+				var type = input.attr('data-type');
+				if( config.type_mask[type] ){
+					input.unmask();
+
+					if( typeof type == 'string' ){
+						input.mask( config.type_mask[type] );	
+					}
+
+					if( typeof type == 'object' ){
+						//input.mask( config.type_mask[type].mask, config.type_mask[type].options );
+					}
+					
+				}
+
+			});
+
+			form.prepend("<input type='hidden' id='df-mode' name='df-mode' value='"+config.mode+"' fixed='true' class='df' />");
+
+			if( config.footer ){
+				form.append("<div class='df-group df-footer'> </div>");
+				addButtons();
+			}							
+			
+			/*var t = 100;
+			var time = 0;
+			form.find( "."+config.classinput ).each(function(){
+				$(this).delay(time).fadeIn( 1000 );	
+				time += t;
+			})*/
+
+			config.loaded();
 		}
 
-
-		// pegas as propriedades da função e transfere para o objeto
-		if (settings){$.extend(config, settings);}
 		
-		var form ;
+		// pegas as propriedades da função e transfere para o objeto
+		if (typeof settings === 'object'){
+			$.extend(config, settings);
 
-		this.filter( "form" ).each(function() {
-            
-			form = $( this );
-			writeinput( form );
-			form.attr('mode',config.mode);
+			var form ;
 
-			// se realtime estiver ativo
-			if( config.realtime )  setInterval(function(){ realtime() }, 2000);
-            
-           	// se tiver um action
-           	if( config.action ){
-           		form.attr('action',config.action);
-           	}
 
-           	// se tiver um action
-           	if( config.method ){
-           		form.attr('method',config.method);
-           	}
+			this.filter( "form" ).each(function() {
+				form = $( this );
+				writeinput( form );
+				form.attr('mode',config.mode);
 
-           	// Submit
-           	form.unbind('submit');
-           	form.submit(function(){
+				// se realtime estiver ativo
+				if( config.realtime )  setInterval(function(){ realtime() }, 2000);
+	            
+	           	// se tiver um action
+	           	if( config.action ){
+	           		form.attr('action',config.action);
+	           	}
 
-           		// Validar campos
-           		var ok_validate = config.validate(form);
+	           	// se tiver um action
+	           	if( config.method ){
+	           		form.attr('method',config.method);
+	           	}
 
- 				// Se a validação tiver ok
- 				if( ok_validate ){
- 					
- 					if( config.confirmation ){
- 						block();
- 						// Valida PHP
-	 					$.ajax({
-	 						url : config.confirmation,
-	 						dataType : 'JSON',
-	 						success : function( ret ){
-	 							// tratamento de retorno
-	 							if( ret ){
-	 								// Success!
-	 								if( ret.confirm ){
-	 									// Se for ajax
-	 									doConfirm( ret.confirm );
- 										return;
+	           	// Submit
+	           	form.unbind('submit');
+	           	form.submit(function(){
+	           		
+	           		// Validar campos
+	           		var ok_validate = config.validate(form);
 
-	 								}else{
+	 				// Se a validação tiver ok
+	 				if( ok_validate ){
+	 					
+	 					if( config.confirmation ){
+	 						blockform();
+	 						// Valida PHP
+		 					$.ajax({
+		 						url : config.confirmation,
+		 						dataType : 'JSON',
+		 						success : function( ret ){
+		 							// tratamento de retorno
+		 							if( ret ){
+		 								// Success!
+		 								if( ret.confirm ){
+		 									// Se for ajax
+		 									doConfirm( ret.confirm );
+	 										return;
 
-	 									unblock();
-	 									if( ret.message ){
-	 										showmessage( ret.message );
-	 									}	 									
- 										
-	 								}
-	 							}	
-	 						}
-	 					});	
+		 								}else{
 
- 					} else {
- 						// Se for ajax
-						if( config.ajax ){
-							send();	
-						}else{
-							return send();	
-						}		
- 					}
- 			   		
-		           	return false;				
+		 									unblock();
+		 									if( ret.message ){
+		 										showmessage( ret.message );
+		 									}	 									
+	 										
+		 								}
+		 							}	
+		 						}
+		 					});	
 
- 				}
+	 					} else {
+	 						// Se for ajax
+							if( config.ajax ){
+								send();	
+							}else{
+								return send();	
+							}		
+	 					}
+	 			   		
+			           	return false;				
 
- 				return false;
+	 				}
 
-           	})
+	 				return false;
 
-        });
- 	
-        return this;
+	           	})
+
+	        });
+	 	
+	        return this;
+		}
+
+		if (typeof settings === 'string') {
+			switch( settings ){
+				case 'reset':
+
+				break;
+
+			}
+		}
+		
+		
 		
 	}
+
+
 })(jQuery);
