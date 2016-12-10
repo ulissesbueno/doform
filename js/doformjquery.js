@@ -457,7 +457,7 @@
 											close = "></textarea>";
 											break;
 										case 'password':
-											type = " type='password' ";
+											type = " type='password' autocomplete='no' ";
 											break;
 										case 'hidden':
 											type = " type='hidden' ";
