@@ -31,6 +31,7 @@ form{
 	padding: 10px;
 	float: left;
 	display: none;
+	position: relative;
 }
 
 .df-group .df-input:last-child{
@@ -154,6 +155,7 @@ form[mode=view] .df-input input:not(.df-btn){
 .df-alert-error {
 	padding: 4px 0px 0px 4px;
 	color: red;
+	position: absolute;
 }
 
 
