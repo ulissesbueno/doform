@@ -121,6 +121,7 @@
        		type_mask : {
        			cpf : '000.000.000-00',
        			date : '00/00/0000',
+       			datetime : '00/00/0000 00:00',
        			port : '0000'
        		},
        		realtime : false,
@@ -371,7 +372,7 @@
 			}
 
 			// no focus tira a classe de erro
-			input.unbind('focus');
+			//input.unbind('focus');
 			input.focus(function(){
 				$(this).removeClass( config.classerror );
 				//$(this).parent().find('.df-alert-error').remove();
@@ -427,6 +428,7 @@
 		}
 
 		var ReadJson = function( ret, form ){
+
 			//limpa form
 			form.html('');
 			// varre dados
@@ -580,6 +582,9 @@
 						// Valida input onblur
 						validateInput( $(this).attr('data-type'), $(this) );
 					});
+
+					form.show()
+
 				}
 			}			
 		}
@@ -590,6 +595,7 @@
 
 				if( typeof config.data === "object"){
 					ReadJson(config.data,form)
+					Finaly(form)
 				}else{
 					//bloqueia form
 					blockform();
@@ -601,7 +607,8 @@
 							// tratamento de retorno
 							if( ret ){
 
-								ReadJson(ret,form);							
+								ReadJson(ret,form);	
+								Finaly(form)						
 
 							}	
 
@@ -614,8 +621,10 @@
 				}
 
 			}
-
 			
+		}
+
+		var Finaly = function( form ){
 			//group.append( "<div style='clear: both'> </div>" );
 
 			// Set mask
@@ -640,7 +649,7 @@
 
 			form.prepend("<input type='hidden' id='df-mode' name='df-mode' value='"+config.mode+"' fixed='true' class='df' />");
 
-			if( config.footer ){
+			if( config.footer ){								
 				form.append("<div class='df-group df-footer'> </div>");
 				addButtons();
 			}							
