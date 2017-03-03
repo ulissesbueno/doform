@@ -2,7 +2,7 @@
 
 (function($){
 	// Cria um form dinamicamete
-	$.fn.doform = function(settings){
+	$.fn.doform = function(settings,params){
 
 		var config = {
 			action : '',
@@ -11,9 +11,11 @@
 			classerror : 'df-error',
 			classinput : 'df-input',
 			classgroup : 'df-group',
+			classmsgerro : '',
 			mode : 'new',
 			textButtonSubmit : 	'Send',
 			buttons : {},
+			statusCode: {},
 			buttonCancel : function( form ){
 
 			},
@@ -39,11 +41,13 @@
 
        			return ok;
        		},
+       		aplly_error : '',
+       		aplly_error_reverte : '',
        		confirmation : '',
        		ajax : true,
        		footer : true,
        		loaded : function(form){ },
-       		after_submit: function(ret){}, 
+       		after_submit: function(ret, form){}, 
        		type_validate : { 
        							email : function( input ){
        								var regex = /^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z0-9]{2,4})+$/;
@@ -121,7 +125,8 @@
        		type_mask : {
        			cpf : '000.000.000-00',
        			date : '00/00/0000',
-       			port : '0000'
+       			port : '0000',
+       			cep : '00000-000'
        		},
        		realtime : false,
        		alert_error : ''
@@ -218,17 +223,18 @@
 		}
 
 		// Mostra erro e destaca o campo 
-		var showerror = function( error_type, type, input, fromForm ){
+		var showerror = function( error_type, type, input, fromForm, message ){
+
 
 			input.addClass( config.classerror ).val('');
 			
-			if( !input.attr('error_status') == error_type ){
+			if( input.attr('error_status') != error_type ){
 
 				input.attr('error_status',error_type);
 				
 				var parent = input.parent();
 				parent.find('.df-alert-error').remove();
-				var message = '';
+				//if(!message) message = '';
 				parent.css('position','relative');
 				switch( error_type ){
 					// Campo vazio
@@ -245,8 +251,8 @@
 						break;
 
 				};
-
-				input.after("<div class='df-alert-error' >"+message+"</div>");
+				
+				input.after("<div class='df-alert-error "+config.classmsgerro+" ' >"+message+"</div>");
 				parent.find('.df-alert-error').delay(2000).fadeOut( 2000, function(){
 					parent.find('.df-alert-error').remove();
 					input.removeAttr('error_status');
@@ -262,15 +268,15 @@
 		// Exibe mensagem
 		var showmessage = function( message ){
 
-			form.find('#df-dialog').remove();
-			form.append("<div id='df-dialog' style='display:none'>"+message+"</div>");
+			$('body').find('#df-dialog').remove();
+			$('body').append("<div id='df-dialog' style='display:none'>"+message+"</div>");
 
 			$( "#df-dialog" ).dialog({
 			      modal: true,
 			      buttons: {
 			        Ok: function() {
 			          $( this ).dialog( "close" );
-			          $('.ui-dialog').remove();
+			          $('body').find('#df-dialog').remove();
 			        }
 			      }
 		    });
@@ -314,6 +320,7 @@
 				data : form.serialize() ,
 				dataType : 'JSON',
 				type: config.method,
+				statusCode: config.statusCode,
 				success : function( ret ){
 					// tratamento de retorno
 					if( ret ){
@@ -333,7 +340,7 @@
 						}
 
 						if( config.after_submit ){
-							config.after_submit( ret );
+							config.after_submit( ret, form );
 						}
 						
 						
@@ -367,7 +374,13 @@
 			}
 			
 			if(!ok){
-				showerror( error_type , type , input, fromForm );
+
+				if( config.aplly_error ){
+					if( config.aplly_error( input ) ){
+						showerror( error_type , type , input, fromForm );
+					}
+				}
+				
 			}
 
 			// no focus tira a classe de erro
@@ -622,10 +635,10 @@
 			form.find('input,select,textarea').each(function(){
 
 				var input = $(this);
-				var type = input.attr('data-type');
+				var type = input.data('type');
 				if( config.type_mask[type] ){
 					input.unmask();
-
+					
 					if( typeof type == 'string' ){
 						input.mask( config.type_mask[type] );	
 					}
@@ -655,13 +668,11 @@
 			config.loaded();
 		}
 
-		
+		$.extend(config, settings);
 		// pegas as propriedades da função e transfere para o objeto
 		if (typeof settings === 'object'){
-			$.extend(config, settings);
-
+			
 			var form ;
-
 
 			this.filter( "form" ).each(function() {
 				form = $( this );
@@ -744,7 +755,14 @@
 			switch( settings ){
 				case 'reset':
 
-				break;
+					break;
+				case 'showerror':
+
+						showerror(params[0],params[1],params[2],params[3])
+
+					break;
+
+
 
 			}
 		}
