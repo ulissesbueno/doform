@@ -1,5 +1,4 @@
 // JavaScript Document
-
 (function($){
 	// Cria um form dinamicamete
 	$.fn.doform = function(settings){
