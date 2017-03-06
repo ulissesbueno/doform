@@ -1,9 +1,8 @@
 // JavaScript Document
-
 (function($){
 	// Cria um form dinamicamete
-	$.fn.doform = function(settings,params){
-
+	$.fn.doform = function(settings){
+		var form = $(this);
 		var config = {
 			action : '',
 			method : 'post',
@@ -11,17 +10,13 @@
 			classerror : 'df-error',
 			classinput : 'df-input',
 			classgroup : 'df-group',
-			classmsgerro : '',
 			mode : 'new',
 			textButtonSubmit : 	'Send',
 			buttons : {},
-			statusCode: {},
 			buttonCancel : function( form ){
 
 			},
-			submit: function(options) {
-
-			},
+			submit: '',
        		validate: function(form) {
 
        			var ok = true;
@@ -41,13 +36,12 @@
 
        			return ok;
        		},
-       		aplly_error : '',
-       		aplly_error_reverte : '',
        		confirmation : '',
        		ajax : true,
        		footer : true,
        		loaded : function(form){ },
-       		after_submit: function(ret, form){}, 
+       		after_submit: '', 
+       		before_submit: '', 
        		type_validate : { 
        							email : function( input ){
        								var regex = /^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z0-9]{2,4})+$/;
@@ -125,8 +119,8 @@
        		type_mask : {
        			cpf : '000.000.000-00',
        			date : '00/00/0000',
-       			port : '0000',
-       			cep : '00000-000'
+       			datetime : '00/00/0000 00:00',
+       			port : '0000'
        		},
        		realtime : false,
        		alert_error : ''
@@ -223,18 +217,17 @@
 		}
 
 		// Mostra erro e destaca o campo 
-		var showerror = function( error_type, type, input, fromForm, message ){
-
+		var showerror = function( error_type, type, input, fromForm ){
 
 			input.addClass( config.classerror ).val('');
 			
-			if( input.attr('error_status') != error_type ){
+			if( !input.attr('error_status') == error_type ){
 
 				input.attr('error_status',error_type);
 				
 				var parent = input.parent();
 				parent.find('.df-alert-error').remove();
-				//if(!message) message = '';
+				var message = '';
 				parent.css('position','relative');
 				switch( error_type ){
 					// Campo vazio
@@ -251,8 +244,8 @@
 						break;
 
 				};
-				
-				input.after("<div class='df-alert-error "+config.classmsgerro+" ' >"+message+"</div>");
+
+				input.after("<div class='df-alert-error' >"+message+"</div>");
 				parent.find('.df-alert-error').delay(2000).fadeOut( 2000, function(){
 					parent.find('.df-alert-error').remove();
 					input.removeAttr('error_status');
@@ -268,15 +261,15 @@
 		// Exibe mensagem
 		var showmessage = function( message ){
 
-			$('body').find('#df-dialog').remove();
-			$('body').append("<div id='df-dialog' style='display:none'>"+message+"</div>");
+			form.find('#df-dialog').remove();
+			form.append("<div id='df-dialog' style='display:none'>"+message+"</div>");
 
 			$( "#df-dialog" ).dialog({
 			      modal: true,
 			      buttons: {
 			        Ok: function() {
 			          $( this ).dialog( "close" );
-			          $('body').find('#df-dialog').remove();
+			          $('.ui-dialog').remove();
 			        }
 			      }
 		    });
@@ -284,9 +277,7 @@
 
 		// Block Form
 		var blockform = function( message ){
-
 			if( !blocking ){
-
 				unblock();
 
 				form.block ({ 	message: '',
@@ -312,7 +303,14 @@
 		}
 
 		// Envia os dados do formulario
-		var send = function(){
+		var send = function(){	
+
+			if( config.before_submit ){
+				if( !config.before_submit() ){
+					return false;
+				}
+
+			}
 
 			blockform();
 			$.ajax({
@@ -320,7 +318,6 @@
 				data : form.serialize() ,
 				dataType : 'JSON',
 				type: config.method,
-				statusCode: config.statusCode,
 				success : function( ret ){
 					// tratamento de retorno
 					if( ret ){
@@ -340,7 +337,7 @@
 						}
 
 						if( config.after_submit ){
-							config.after_submit( ret, form );
+							config.after_submit( ret );
 						}
 						
 						
@@ -374,17 +371,11 @@
 			}
 			
 			if(!ok){
-
-				if( config.aplly_error ){
-					if( config.aplly_error( input ) ){
-						showerror( error_type , type , input, fromForm );
-					}
-				}
-				
+				showerror( error_type , type , input, fromForm );
 			}
 
 			// no focus tira a classe de erro
-			input.unbind('focus');
+			//input.unbind('focus');
 			input.focus(function(){
 				$(this).removeClass( config.classerror );
 				//$(this).parent().find('.df-alert-error').remove();
@@ -440,6 +431,7 @@
 		}
 
 		var ReadJson = function( ret, form ){
+
 			//limpa form
 			form.html('');
 			// varre dados
@@ -560,8 +552,10 @@
 
 					}
 
+					class_required = '';
 					if( ret[i].data[f].required == 'yes' ){
 						required = "required='required'";
+						class_required = 'required';
 						req = '*';
 					}
 
@@ -577,8 +571,8 @@
 					var html_input = '';
 
 					if( !no_div  ){
-						html_input += "<div class='"+config.classinput+" "+ret[i].data[f].name+" "+extra_class+" '>";
-						if(label) html_input += "<label for='"+ret[i].data[f].name+"'>"+ret[i].data[f].label+" "+req+"</label>";	
+						html_input += "<div class='"+config.classinput+" "+ret[i].data[f].name+" "+extra_class+" "+class_required+" '>";
+						if(label) html_input += "<label for='"+ret[i].data[f].name+"' class='"+class_required+"'>"+ret[i].data[f].label+" "+req+"</label>";	
 					}
 						html_input += "<"+selector+" "+type+" class='"+input_class+"' name='"+ ret[i].data[f].name +"' id='"+ ret[i].data[f].name +"' value='"+ ret[i].data[f].value +"' "+ required +" placeholder='"+ ret[i].data[f].label +"' data-type='"+ ret[i].data[f].type +"' size='"+ret[i].data[f].size+"' fixed='"+fixed+"' "+disabled+" "+readonly+" "+close+" ";
 					if( !no_div  ){	
@@ -593,6 +587,9 @@
 						// Valida input onblur
 						validateInput( $(this).attr('data-type'), $(this) );
 					});
+
+					form.show()
+
 				}
 			}			
 		}
@@ -603,7 +600,9 @@
 
 				if( typeof config.data === "object"){
 					ReadJson(config.data,form)
+					Finaly(form)
 				}else{
+					
 					//bloqueia form
 					blockform();
 					$.ajax({
@@ -614,7 +613,8 @@
 							// tratamento de retorno
 							if( ret ){
 
-								ReadJson(ret,form);							
+								ReadJson(ret,form);	
+								Finaly(form)						
 
 							}	
 
@@ -626,19 +626,23 @@
 					});	
 				}
 
+			} else {
+				Finaly(form)			
 			}
-
 			
+		}
+
+		var Finaly = function( form ){
 			//group.append( "<div style='clear: both'> </div>" );
 
 			// Set mask
 			form.find('input,select,textarea').each(function(){
 
 				var input = $(this);
-				var type = input.data('type');
+				var type = input.attr('data-type');
 				if( config.type_mask[type] ){
 					input.unmask();
-					
+
 					if( typeof type == 'string' ){
 						input.mask( config.type_mask[type] );	
 					}
@@ -653,7 +657,7 @@
 
 			form.prepend("<input type='hidden' id='df-mode' name='df-mode' value='"+config.mode+"' fixed='true' class='df' />");
 
-			if( config.footer ){
+			if( config.footer ){								
 				form.append("<div class='df-group df-footer'> </div>");
 				addButtons();
 			}							
@@ -668,11 +672,13 @@
 			config.loaded();
 		}
 
-		$.extend(config, settings);
+		
 		// pegas as propriedades da função e transfere para o objeto
 		if (typeof settings === 'object'){
-			
+			$.extend(config, settings);
+
 			var form ;
+
 
 			this.filter( "form" ).each(function() {
 				form = $( this );
@@ -701,41 +707,48 @@
 
 	 				// Se a validação tiver ok
 	 				if( ok_validate ){
-	 					
-	 					if( config.confirmation ){
-	 						blockform();
-	 						// Valida PHP
-		 					$.ajax({
-		 						url : config.confirmation,
-		 						dataType : 'JSON',
-		 						success : function( ret ){
-		 							// tratamento de retorno
-		 							if( ret ){
-		 								// Success!
-		 								if( ret.confirm ){
-		 									// Se for ajax
-		 									doConfirm( ret.confirm );
-	 										return;
 
-		 								}else{
+	 					if( config.submit ){
 
-		 									unblock();
-		 									if( ret.message ){
-		 										showmessage( ret.message );
-		 									}	 									
-	 										
-		 								}
-		 							}	
-		 						}
-		 					});	
+	 						config.submit();
 
 	 					} else {
-	 						// Se for ajax
-							if( config.ajax ){
-								send();	
-							}else{
-								return send();	
-							}		
+
+	 						if( config.confirmation ){
+		 						blockform();
+		 						// Valida PHP
+			 					$.ajax({
+			 						url : config.confirmation,
+			 						dataType : 'JSON',
+			 						success : function( ret ){
+			 							// tratamento de retorno
+			 							if( ret ){
+			 								// Success!
+			 								if( ret.confirm ){
+			 									// Se for ajax
+			 									doConfirm( ret.confirm );
+		 										return;
+
+			 								}else{
+
+			 									unblock();
+			 									if( ret.message ){
+			 										showmessage( ret.message );
+			 									}	 									
+		 										
+			 								}
+			 							}	
+			 						}
+			 					});	
+
+		 					} else {
+		 						// Se for ajax
+								if( config.ajax ){
+									send();	
+								}else{
+									return send();	
+								}		
+		 					}
 	 					}
 	 			   		
 			           	return false;				
@@ -752,19 +765,8 @@
 		}
 
 		if (typeof settings === 'string') {
-			switch( settings ){
-				case 'reset':
-
-					break;
-				case 'showerror':
-
-						showerror(params[0],params[1],params[2],params[3])
-
-					break;
-
-
-
-			}
+			var fun = eval(settings);
+			fun.apply()
 		}
 		
 		
