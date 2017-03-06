@@ -3,7 +3,7 @@
 (function($){
 	// Cria um form dinamicamete
 	$.fn.doform = function(settings){
-
+		var form = $(this);
 		var config = {
 			action : '',
 			method : 'post',
@@ -17,9 +17,7 @@
 			buttonCancel : function( form ){
 
 			},
-			submit: function(options) {
-
-			},
+			submit: '',
        		validate: function(form) {
 
        			var ok = true;
@@ -43,7 +41,8 @@
        		ajax : true,
        		footer : true,
        		loaded : function(form){ },
-       		after_submit: function(ret){}, 
+       		after_submit: '', 
+       		before_submit: '', 
        		type_validate : { 
        							email : function( input ){
        								var regex = /^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z0-9]{2,4})+$/;
@@ -279,9 +278,7 @@
 
 		// Block Form
 		var blockform = function( message ){
-
 			if( !blocking ){
-
 				unblock();
 
 				form.block ({ 	message: '',
@@ -307,7 +304,14 @@
 		}
 
 		// Envia os dados do formulario
-		var send = function(){
+		var send = function(){	
+
+			if( config.before_submit ){
+				if( !config.before_submit() ){
+					return false;
+				}
+
+			}
 
 			blockform();
 			$.ajax({
@@ -549,8 +553,10 @@
 
 					}
 
+					class_required = '';
 					if( ret[i].data[f].required == 'yes' ){
 						required = "required='required'";
+						class_required = 'required';
 						req = '*';
 					}
 
@@ -566,8 +572,8 @@
 					var html_input = '';
 
 					if( !no_div  ){
-						html_input += "<div class='"+config.classinput+" "+ret[i].data[f].name+" "+extra_class+" '>";
-						if(label) html_input += "<label for='"+ret[i].data[f].name+"'>"+ret[i].data[f].label+" "+req+"</label>";	
+						html_input += "<div class='"+config.classinput+" "+ret[i].data[f].name+" "+extra_class+" "+class_required+" '>";
+						if(label) html_input += "<label for='"+ret[i].data[f].name+"' class='"+class_required+"'>"+ret[i].data[f].label+" "+req+"</label>";	
 					}
 						html_input += "<"+selector+" "+type+" class='"+input_class+"' name='"+ ret[i].data[f].name +"' id='"+ ret[i].data[f].name +"' value='"+ ret[i].data[f].value +"' "+ required +" placeholder='"+ ret[i].data[f].label +"' data-type='"+ ret[i].data[f].type +"' size='"+ret[i].data[f].size+"' fixed='"+fixed+"' "+disabled+" "+readonly+" "+close+" ";
 					if( !no_div  ){	
@@ -597,6 +603,7 @@
 					ReadJson(config.data,form)
 					Finaly(form)
 				}else{
+					
 					//bloqueia form
 					blockform();
 					$.ajax({
@@ -620,6 +627,8 @@
 					});	
 				}
 
+			} else {
+				Finaly(form)			
 			}
 			
 		}
@@ -699,41 +708,48 @@
 
 	 				// Se a validação tiver ok
 	 				if( ok_validate ){
-	 					
-	 					if( config.confirmation ){
-	 						blockform();
-	 						// Valida PHP
-		 					$.ajax({
-		 						url : config.confirmation,
-		 						dataType : 'JSON',
-		 						success : function( ret ){
-		 							// tratamento de retorno
-		 							if( ret ){
-		 								// Success!
-		 								if( ret.confirm ){
-		 									// Se for ajax
-		 									doConfirm( ret.confirm );
-	 										return;
 
-		 								}else{
+	 					if( config.submit ){
 
-		 									unblock();
-		 									if( ret.message ){
-		 										showmessage( ret.message );
-		 									}	 									
-	 										
-		 								}
-		 							}	
-		 						}
-		 					});	
+	 						config.submit();
 
 	 					} else {
-	 						// Se for ajax
-							if( config.ajax ){
-								send();	
-							}else{
-								return send();	
-							}		
+
+	 						if( config.confirmation ){
+		 						blockform();
+		 						// Valida PHP
+			 					$.ajax({
+			 						url : config.confirmation,
+			 						dataType : 'JSON',
+			 						success : function( ret ){
+			 							// tratamento de retorno
+			 							if( ret ){
+			 								// Success!
+			 								if( ret.confirm ){
+			 									// Se for ajax
+			 									doConfirm( ret.confirm );
+		 										return;
+
+			 								}else{
+
+			 									unblock();
+			 									if( ret.message ){
+			 										showmessage( ret.message );
+			 									}	 									
+		 										
+			 								}
+			 							}	
+			 						}
+			 					});	
+
+		 					} else {
+		 						// Se for ajax
+								if( config.ajax ){
+									send();	
+								}else{
+									return send();	
+								}		
+		 					}
 	 					}
 	 			   		
 			           	return false;				
@@ -750,12 +766,8 @@
 		}
 
 		if (typeof settings === 'string') {
-			switch( settings ){
-				case 'reset':
-
-				break;
-
-			}
+			var fun = eval(settings);
+			fun.apply()
 		}
 		
 		
